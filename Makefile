@@ -29,10 +29,10 @@ BINS=smarthome.elf
 
 # put here the additional .o files you want to generate
 # one .c file for each .o should be present
-OBJS= uart.o pin_io.o
+OBJS= uart.o pin_io.o eeprom.o
 
 # put here the additional header files needed for compilation
-HEADERS= uart.h pin_io.h
+HEADERS= uart.h pin_io.h eeprom.h
 
 # the file below contains the actual rules
 

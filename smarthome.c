@@ -4,8 +4,9 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include <uart.h>
-#include <pin_io.h>
+#include "uart.h"
+#include "pin_io.h"
+#include "eeprom.h"
 
 //MAIN
 int main(void){
@@ -17,12 +18,12 @@ int main(void){
 	
 	
 	tx((uint8_t*)"olaa");
-	//uint8_t buf[256];
-	uint8_t i=0;
+	
+	
+	
 	while(1){
-		if(i==0)i=1;
-		else i=0;
-		set_out(i,7);
+		
+		
 		_delay_ms(1000);
 	}
 }
