@@ -92,8 +92,53 @@ void set_out(uint8_t on_off,uint8_t pin){
 }
 
 
+//////////////////////////////////
+//these functions are called by the main to create connections between
+//input and output and to do other stuff
 
+uint16_t status[8];
 
+uint8_t fix_out_val(uint16_t val,uint8_t output){
+	if(status[output]>1023)return 0;
+	status[output]=val;
+	return 1;
+}
+
+uint8_t create_d_con(uint8_t input,uint8_t output){
+	if(status[output])return 0;
+	status[output]=(1<<10);
+	status[output]|=input;
+	return 1;
+}
+
+uint8_t create_a_con(uint8_t input,uint8_t output){
+	if(status[output])return 0;
+	status[output]=(1<<11);
+	status[output]|=input;
+	return 1;
+}
+
+uint8_t delete_con(uint8_t output){
+	status[output]=0;
+	return 1;
+}
+
+void refresh_output(void){
+	for(uint8_t i=0;i<8;i++){
+		uint16_t val=0;
+		if(status[i]<1024)
+		val=status[i];
+		if(status[i]&(1<<10)){
+			if(di_status&(1<<(status[i]&0x0f)))val=1023;
+			else val=0;
+		}
+		if(status[i]&(1<<11)){
+			val=read_adc(status[i]&0x0f);
+		}
+		set_out_val(val,i);
+	}
+	return;
+}
 
 
 
