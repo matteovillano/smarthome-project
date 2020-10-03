@@ -23,19 +23,52 @@ void cmd(char* buf){
 	}
 	if(!strcmp(tok,"on")){
 		tok=strtok(NULL," ");
-		fix_out_val(1023,0);
+		uint8_t o=get_out(tok);
+		if(o==0xff){println("no output found");return;}
+		if(fix_out_val(1023,o))
+		println("done");
+		else
+		println("error");
 		return;
 	}
 	if(!strcmp(tok,"off")){
-		fix_out_val(0,0);
+		tok=strtok(NULL," ");
+		uint8_t o=get_out(tok);
+		if(o==0xff){println("no output found");return;}
+		if(fix_out_val(0,o))
+		println("done");
+		else
+		println("error");
 		return;
 	}
 	if(!strcmp(tok,"connect")){
-		create_d_con(0,0);
+		tok=strtok(NULL," ");
+		uint8_t d=1;
+		uint8_t i=get_di(tok);
+		if(i==0xff){i=get_ai(tok); d=0;}
+		if(i==0xff){println("no input found"); return;}
+		tok=strtok(NULL," ");
+		uint8_t o=get_out(tok);
+		if(d){
+			if(create_d_con(i,o))
+			println("done");
+			else
+			println("error");
+		}else{
+			if(create_a_con(i,o))
+			println("done");
+			else
+			println("error");
+		}
 		return;
 	}
 	if(!strcmp(tok,"disconnect")){
-		delete_con(0);
+		tok=strtok(NULL," ");
+		uint8_t o=get_out(tok);
+		if(delete_con(o))
+		println("done");
+		else
+		println("error");
 		return;
 	}
 	if(!strcmp(tok,"show")){
@@ -47,7 +80,24 @@ void cmd(char* buf){
 		return;
 	}
 	if(!strcmp(tok,"reset")){
-		
+		tok=strtok(NULL," ");
+		if(!strcmp(tok,"names")){
+			set_default_name();
+			println("done");
+		}
+		if(!strcmp(tok,"connections")){
+			for(uint8_t i=0;i<8;i++){
+				delete_con(i);
+			}
+			println("done");
+		}
+		if(!strcmp(tok,"all")){
+			set_default_name();
+			for(uint8_t i=0;i<8;i++){
+				delete_con(i);
+			}
+			println("done");
+		}
 		return;
 	}
 	println("no cmd found, type help");
@@ -67,16 +117,17 @@ int main(void){
 	
 	char buffer[256];
 	
-	
-	
 	while(1){
+		
 		if(rx_state()){
+			//println("sono in rx");
 			rx_get((uint8_t*)buffer);
 			cmd(buffer);
 			for(uint8_t i=0;i<255;i++){
 				buffer[i]=0;
 			}
 		}
+		//*/
 		
 		
 		refresh_output();

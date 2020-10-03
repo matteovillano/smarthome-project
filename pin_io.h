@@ -2,7 +2,7 @@
 
 //DIGITAL INPUT
 void di_init(void);
-uint8_t get_di(void);
+uint8_t get_di_status(void);
 
 //ADC
 void an_init(void);

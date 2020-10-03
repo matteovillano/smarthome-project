@@ -18,7 +18,7 @@ ISR(PCINT0_vect){
 	di_status=~PINB;
 }
 
-uint8_t get_di(void){
+uint8_t get_di_status(void){
 	return di_status;
 }
 
