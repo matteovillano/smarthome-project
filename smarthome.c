@@ -18,13 +18,16 @@ void println(char* buf){
 void cmd(char* buf){
 	char* tok=strtok(buf," ");
 	if(!strcmp(tok,"help")){
-		println("heellpp");
+		println("all commands are described in instructions.pdf in the current folder");
 		return;
 	}
 	if(!strcmp(tok,"on")){
 		tok=strtok(NULL," ");
 		uint8_t o=get_out(tok);
-		if(o==0xff){println("no output found");return;}
+		if(o==0xff){
+			println("no output found");
+			return;
+		}
 		if(fix_out_val(1023,o))
 		println("done");
 		else
@@ -53,18 +56,22 @@ void cmd(char* buf){
 			if(create_d_con(i,o))
 			println("done");
 			else
-			println("error");
+			println("can not create a connection");
 		}else{
 			if(create_a_con(i,o))
 			println("done");
 			else
-			println("error");
+			println("can not create a connection");
 		}
 		return;
 	}
 	if(!strcmp(tok,"disconnect")){
 		tok=strtok(NULL," ");
 		uint8_t o=get_out(tok);
+		if(o==0xff){
+			println("no output found");
+			return;
+		}
 		if(delete_con(o))
 		println("done");
 		else
@@ -72,11 +79,82 @@ void cmd(char* buf){
 		return;
 	}
 	if(!strcmp(tok,"show")){
-		
+		char b1[16];
+		tok=strtok(NULL," ");
+		if(!strcmp(tok,"names")){
+			println("outputs:");
+			for(uint8_t i=0;i<8;i++){
+				get_out_name(b1,i);
+				println(b1);
+			}
+			println("digila inputs:");
+			for(uint8_t i=0;i<8;i++){
+				get_di_name(b1,i);
+				println(b1);
+			}
+			println("analog inputs:");
+			for(uint8_t i=0;i<8;i++){
+				get_ai_name(b1,i);
+				println(b1);
+			}
+			println("end");
+			return;
+		}
+		if(!strcmp(tok,"output")){
+			println("outputs:");
+			for(uint8_t i=0;i<8;i++){
+				get_out_name(b1,i);
+				println(b1);
+			}
+			println("end");
+			return;
+		}
+		if(!strcmp(tok,"digital")){
+			println("digila inputs:");
+			for(uint8_t i=0;i<8;i++){
+				get_di_name(b1,i);
+				println(b1);
+			}
+			println("end");
+			return;
+		}
+		if(!strcmp(tok,"analog")){
+			println("analog inputs:");
+			for(uint8_t i=0;i<8;i++){
+				get_ai_name(b1,i);
+				println(b1);
+			}
+			println("end");
+			return;
+		}
+		println("no show cmd found");
 		return;
 	}
 	if(!strcmp(tok,"set")){
-		
+		tok=strtok(NULL," ");
+		uint8_t d;
+		d=get_out(tok);
+		if(d!=0xff){
+			tok=strtok(NULL," ");
+			set_out_name(tok,d);
+			println("done");
+			return;
+		}
+		d=get_di(tok);
+		if(d!=0xff){
+			tok=strtok(NULL," ");
+			set_di_name(tok,d);
+			println("done");
+			return;
+		}
+		d=get_ai(tok);
+		if(d!=0xff){
+			tok=strtok(NULL," ");
+			set_ai_name(tok,d);
+			println("done");
+			return;
+		}
+		println("no device found");
 		return;
 	}
 	if(!strcmp(tok,"reset")){
@@ -98,6 +176,7 @@ void cmd(char* buf){
 			}
 			println("done");
 		}
+		println("no reset cmd found");
 		return;
 	}
 	println("no cmd found, type help");
@@ -111,25 +190,22 @@ int main(void){
 	an_init();
 	out_init();
 	
-	
-	tx((uint8_t*)"olaa");
-	
-	
 	char buffer[256];
 	
+	println("server ready");
+	println("type any command or help");
+	
+
 	while(1){
 		
 		if(rx_state()){
-			//println("sono in rx");
 			rx_get((uint8_t*)buffer);
 			cmd(buffer);
 			for(uint8_t i=0;i<255;i++){
 				buffer[i]=0;
 			}
 		}
-		//*/
-		
-		
+			
 		refresh_output();
 		_delay_ms(10);
 	}

@@ -119,8 +119,10 @@ uint8_t create_a_con(uint8_t input,uint8_t output){
 }
 
 uint8_t delete_con(uint8_t output){
-	status[output]=0;
-	return 1;
+	if(output<8){
+		status[output]=0;
+		return 1;
+	}else return 0;
 }
 
 void refresh_output(void){
