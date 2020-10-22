@@ -9,9 +9,8 @@
 #include "pin_io.h"
 #include "eeprom.h"
 
-void println(char* buf){
-	tx((uint8_t*)buf);
-	return;
+void println(char* string){
+	
 }
 
 //this function takes the command string and decides what to do
@@ -189,24 +188,20 @@ int main(void){
 	di_init();
 	an_init();
 	out_init();
+
 	
-	char buffer[256];
-	
-	println("server ready");
-	println("type any command or help");
+	paket p;
 	
 
 	while(1){
 		
 		if(rx_state()){
-			rx_get((uint8_t*)buffer);
-			cmd(buffer);
-			for(uint8_t i=0;i<255;i++){
-				buffer[i]=0;
-			}
+			p=pak_rx();
+			pak_tx(&p);
 		}
 			
 		refresh_output();
 		_delay_ms(10);
+		
 	}
 }
