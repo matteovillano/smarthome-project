@@ -3,6 +3,17 @@
 #include <fcntl.h>    
 #include <termios.h>   
 #include <time.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define MAX_WAIT CLOCKS_PER_SEC
+#define CON_REQ 1
+#define CON_ACC	2
+#define CON_REF 3
+#define PAYLOAD 4
+#define CHECKSUM 5
+#define ACK 6
+#define NACK 7
 
 
 typedef struct{
@@ -18,12 +29,35 @@ void delay(int ms){
 	clock_t now,then;
 	clock_t st=clock();
 	pause=ms*(CLOCKS_PER_SEC/1000);
-	now=then=clock();
+	then=clock();
+	now=then;
 	while((now-then)<pause)
 	now=clock();
 	return;
 }
 
+void pak_print(pak p){
+	printf("<h:%d p:%d %d %d %d>\n",p.header,p.payload[0],p.payload[1],p.payload[2],p.payload[3]);
+	return;
+}
+
+pak new_h_pak(char header){
+	pak p;
+	p.header=header;
+	for(int i=0;i<4;i++){
+		p.payload[i]=0;
+	}
+	return p;
+}
+
+pak new_p_pak(char header,char* payload){
+	pak p;
+	p.header=header;
+	for(int i=0;i<4;i++){
+		p.payload[i]=payload[i];
+	}
+	return p;
+}
 
 //this function initialize the serial comm (i found it on web and modified it)
 int serialport_init(const char* serialport){
@@ -79,6 +113,8 @@ int pak_tx(pak p){
 	}
 	b[5]='\r';
 	b[6]='\n';
+	//printf("sending: ");
+	//pak_print(p);
 	return write(fd,b,7);
 	
 }
@@ -89,26 +125,138 @@ pak pak_rx(){
 	char read_buf;
 	int i=0;
 	int read_res=0;
+	clock_t now,then;
+	then=clock();
+	now=then;
 	while(1){
 		read_res=read(fd,&read_buf,1);
 		if(read_res){
 			buf[i]=read_buf;
 			i++;
 		}
-		if(i>=7&&(buf[i-1]==10||buf[i-1]==13)&&(buf[i-2]==10||buf[i-2]==13))break;
+		now=clock();
+		if(now-then>MAX_WAIT){
+			p.header=CON_REF;
+			return p;
+		}
+		if(i>=7&&(buf[i-1]==10||buf[i-1]==13)&&(buf[i-2]==10||buf[i-2]==13))
+			break;
 	}
 	p.header=buf[i-7];
 	for(int j=0;j<4;j++){
 		p.payload[j]=buf[i-6+j];
 	}
+	//printf("recived: ");
+	//pak_print(p);
 	return p;
 }
 
 
-void pak_print(pak p){
-	printf("<h:%d p:%d %d %d %d>\n",p.header,p.payload[0],p.payload[1],p.payload[2],p.payload[3]);
-	return;
+int comm_prot(){
+	pak p;
+	int idx=0;
+	char cs[4]={0,0,0,0};
+	char tx[256]="";
+	char rx[256]="";
+	int f=1;
+		
+	printf("cmd$>");
+	fgets(tx,256,stdin);
+		
+	for(int i=0;i<256;i++){
+		if(tx[i]=='\n'){
+			tx[i]=0;
+			break;
+		}
+	}
+	
+	read(fd,NULL,256);
+	
+	if(!strcmp(tx,"q")||!strcmp(tx,"quit")){
+		printf("bye :)\n");
+		exit(0);
+	}
+	
+		
+	for(int k=0;k<3;k++){
+		p=new_h_pak(CON_REQ);
+		pak_tx(p);
+		p=pak_rx();
+		if(p.header!=CON_ACC)
+			return -1;
+			
+			
+		while(f){
+			p=new_p_pak(PAYLOAD,tx+idx);
+			pak_tx(p);
+			for(int i=0;i<4;i++){
+				cs[i]+=p.payload[i];
+				if(!p.payload[i])
+					f=0;
+			}
+			idx+=4;
+		}
+			
+		p=new_p_pak(CHECKSUM,cs);
+		pak_tx(p);
+			
+			
+		p=pak_rx();
+		if(p.header==ACK)
+			k=4;
+		else if(p.header==NACK){
+			continue;
+		}else return -1;
+	}
+	
+	for(int k=0;k<3;k++){
+		for(int i=0;i<4;i++){
+			cs[i]=0;
+		}
+			
+		idx=0;
+		while(1){
+				
+			p=pak_rx();
+			if(p.header==CON_REF)
+				return -1;
+				
+			if(p.header==PAYLOAD){
+				for(int j=0;j<4;j++){
+					rx[idx+j]=p.payload[j];
+					cs[j]+=p.payload[j];
+				}
+				idx+=4;
+			}else if(p.header==CHECKSUM){
+				for(int j=0;j<4;j++){
+					if(cs[j]!=p.payload[j]){
+						p=new_h_pak(NACK);
+						pak_tx(p);
+						continue;
+					}
+				}
+				p=new_h_pak(ACK);
+				pak_tx(p);
+				k=4;
+				break;
+			}else
+				return -1;
+		}
+	}
+	
+
+	printf("%s\n",rx);
+		
+	p=pak_rx();
+	if(p.header==CON_REF)
+	return 1;
+	else
+	return -1;
+		
+	
 }
+
+
 
 
 int main(){
@@ -120,30 +268,10 @@ int main(){
 	printf("connection established\n");
 	
 	while(1){
-		char tx[256]="";
-		printf("cmd$>");
-		fgets(tx,256,stdin);
-		for(int i=0;i<256;i++){
-			if(tx[i]=='\n'){
-				tx[i]=0;
-				break;
-			}
-		}
-		pak p;
-		p=pak_creation(tx[0],tx+1);
-		
-		printf("sending: ");
-		pak_print(p);
-		pak_tx(p);
-		
-		
-		p=pak_rx();
-		printf("recived: ");
-		pak_print(p);
-		
-		
-		
+		int a=comm_prot();
+		if(a<0)printf("comunication error\n");
 	}
-
+	
+	
 	return 0;
 }

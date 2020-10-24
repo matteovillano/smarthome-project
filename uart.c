@@ -124,4 +124,25 @@ void UART_init(void){
 }
 ////////////////////////////////
 
+///////////paket creation///////////////
+paket new_h_pak(uint8_t header){
+	paket p;
+	p.header=header;
+	for(uint8_t i=0;i<4;i++){
+		p.payload[i]=0;
+	}
+	return p;
+}
+
+paket new_p_pak(uint8_t header, uint8_t* payload){
+	paket p;
+	p.header=header;
+	for(uint8_t i=0;i<4;i++){
+		p.payload[i]=payload[i];
+	}
+	return p;
+}
+
+///////////////////////////////////
+
 
