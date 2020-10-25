@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MAX_WAIT CLOCKS_PER_SEC
+#define MAX_WAIT 2*CLOCKS_PER_SEC
 #define CON_REQ 1
 #define CON_ACC	2
 #define CON_REF 3
@@ -95,15 +95,10 @@ int serialport_init(const char* serialport){
     return fd;
 }
 
-pak pak_creation(char header,char* payload){
-	pak p;
-	p.header=header;
-	for(int i=0;i<4;i++){
-		p.payload[i]=payload[i];
-	}
-	return p;
+int input_clean(){
+	char a[256];
+	return read(fd,a,256);
 }
-
 
 int pak_tx(pak p){
 	char b[7];
@@ -121,7 +116,7 @@ int pak_tx(pak p){
 
 pak pak_rx(){
 	pak p;
-	char buf[32];
+	char buf[16];
 	char read_buf;
 	int i=0;
 	int read_res=0;
@@ -136,16 +131,13 @@ pak pak_rx(){
 		}
 		now=clock();
 		if(now-then>MAX_WAIT){
-			p.header=CON_REF;
+			p=new_h_pak(CON_REF);
 			return p;
 		}
 		if(i>=7&&(buf[i-1]==10||buf[i-1]==13)&&(buf[i-2]==10||buf[i-2]==13))
 			break;
 	}
-	p.header=buf[i-7];
-	for(int j=0;j<4;j++){
-		p.payload[j]=buf[i-6+j];
-	}
+	p=new_p_pak(buf[i-7],buf+i-6);
 	//printf("recived: ");
 	//pak_print(p);
 	return p;
@@ -155,6 +147,7 @@ pak pak_rx(){
 int comm_prot(){
 	pak p;
 	int idx=0;
+	int k;
 	char cs[4]={0,0,0,0};
 	char tx[256]="";
 	char rx[256]="";
@@ -169,16 +162,15 @@ int comm_prot(){
 			break;
 		}
 	}
-	
-	read(fd,NULL,256);
+
+	input_clean();
 	
 	if(!strcmp(tx,"q")||!strcmp(tx,"quit")){
 		printf("bye :)\n");
 		exit(0);
 	}
 	
-		
-	for(int k=0;k<3;k++){
+	for(k=0;k<3;k++){
 		p=new_h_pak(CON_REQ);
 		pak_tx(p);
 		p=pak_rx();
@@ -203,24 +195,24 @@ int comm_prot(){
 			
 		p=pak_rx();
 		if(p.header==ACK)
-			k=4;
+			break;
 		else if(p.header==NACK){
 			continue;
 		}else return -1;
 	}
+	if(k>=3)return -1;
 	
-	for(int k=0;k<3;k++){
+	f=1;
+	for(k=0;k<3&&f;k++){
 		for(int i=0;i<4;i++){
 			cs[i]=0;
 		}
 			
 		idx=0;
 		while(1){
-				
 			p=pak_rx();
 			if(p.header==CON_REF)
 				return -1;
-				
 			if(p.header==PAYLOAD){
 				for(int j=0;j<4;j++){
 					rx[idx+j]=p.payload[j];
@@ -237,13 +229,13 @@ int comm_prot(){
 				}
 				p=new_h_pak(ACK);
 				pak_tx(p);
-				k=4;
+				f=0;
 				break;
 			}else
 				return -1;
 		}
 	}
-	
+	if(k>=3)return -1;
 
 	printf("%s\n",rx);
 		
@@ -252,17 +244,13 @@ int comm_prot(){
 	return 1;
 	else
 	return -1;
-		
-	
 }
 
 
-
-
+//////////////////MAIN///////////////////////////////
 int main(){
 
 	printf("Starting client\n");
-	
 	fd=serialport_init("/dev/ttyACM0");
 	if(fd==-1){printf("can not create a connection\n");return -1;}
 	printf("connection established\n");
@@ -272,6 +260,6 @@ int main(){
 		if(a<0)printf("comunication error\n");
 	}
 	
-	
 	return 0;
 }
+/////////////////////////////////////////////////

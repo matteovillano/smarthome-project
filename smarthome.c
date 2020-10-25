@@ -20,7 +20,7 @@ void cmd(char* buf,char* out_buf){
 	if(!strcmp(tok,"on")){
 		tok=strtok(NULL," ");
 		uint8_t o=get_out(tok);
-		if(o==0xff){
+		if(o==NO_DEV){
 			strcpy(out_buf,"no output found");
 			return;
 		}
@@ -33,7 +33,7 @@ void cmd(char* buf,char* out_buf){
 	if(!strcmp(tok,"off")){
 		tok=strtok(NULL," ");
 		uint8_t o=get_out(tok);
-		if(o==0xff){strcpy(out_buf,"no output found");return;}
+		if(o==NO_DEV){strcpy(out_buf,"no output found");return;}
 		if(fix_out_val(0,o))
 		strcpy(out_buf,"done");
 		else
@@ -44,8 +44,8 @@ void cmd(char* buf,char* out_buf){
 		tok=strtok(NULL," ");
 		uint8_t d=1;
 		uint8_t i=get_di(tok);
-		if(i==0xff){i=get_ai(tok); d=0;}
-		if(i==0xff){strcpy(out_buf,"no input found"); return;}
+		if(i==NO_DEV){i=get_ai(tok); d=0;}
+		if(i==NO_DEV){strcpy(out_buf,"no input found"); return;}
 		tok=strtok(NULL," ");
 		uint8_t o=get_out(tok);
 		if(d){
@@ -64,7 +64,7 @@ void cmd(char* buf,char* out_buf){
 	if(!strcmp(tok,"disconnect")){
 		tok=strtok(NULL," ");
 		uint8_t o=get_out(tok);
-		if(o==0xff){
+		if(o==NO_DEV){
 			strcpy(out_buf,"no output found");
 			return;
 		}
@@ -109,6 +109,31 @@ void cmd(char* buf,char* out_buf){
 			strcat(out_buf,"end");
 			return;
 		}
+		if(!strcmp(tok,"connection")){
+			strcat(out_buf,"connetion:\n");
+			for(uint8_t i=0;i<8;i++){
+				uint16_t s=get_con(i);
+				if(s>0){
+					if(s<1024)
+						strcat(out_buf,"on: ");
+					else if(s&(1<<10)){
+						get_di_name(b1,s&0x0f);
+						strcat(out_buf,b1);
+						strcat(out_buf," -> ");
+					}
+					else if(s&(1<<11)){
+						get_ai_name(b1,s&0x0f);
+						strcat(out_buf,b1);
+						strcat(out_buf," -> ");
+					}
+					get_out_name(b1,i);
+					strcat(out_buf,b1);
+					strcat(out_buf,"\n");
+				}
+			}
+			strcat(out_buf,"end");
+			return;
+		}
 		strcpy(out_buf,"no show cmd found");
 		return;
 	}
@@ -118,21 +143,21 @@ void cmd(char* buf,char* out_buf){
 		tok=strtok(NULL," ");
 		uint8_t d;
 		d=get_out(tok);
-		if(d!=0xff){
+		if(d!=NO_DEV){
 			tok=strtok(NULL," ");
 			set_out_name(tok,d);
 			strcpy(out_buf,"done");
 			return;
 		}
 		d=get_di(tok);
-		if(d!=0xff){
+		if(d!=NO_DEV){
 			tok=strtok(NULL," ");
 			set_di_name(tok,d);
 			strcpy(out_buf,"done");
 			return;
 		}
 		d=get_ai(tok);
-		if(d!=0xff){
+		if(d!=NO_DEV){
 			tok=strtok(NULL," ");
 			set_ai_name(tok,d);
 			strcpy(out_buf,"done");
@@ -148,7 +173,7 @@ void cmd(char* buf,char* out_buf){
 			strcpy(out_buf,"done");
 			return;
 		}
-		if(!strcmp(tok,"connections")){
+		if(!strcmp(tok,"connection")){
 			for(uint8_t i=0;i<8;i++){
 				delete_con(i);
 			}
@@ -276,8 +301,12 @@ int main(void){
 	di_init();
 	an_init();
 	out_init();
-
-	
+	/*
+	for(uint8_t i=0;i<8;i++){
+		delete_con(i);
+	}
+	*/
+	restore_con();
 
 	while(1){
 		

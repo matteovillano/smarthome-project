@@ -20,3 +20,4 @@ uint8_t create_d_con(uint8_t input,uint8_t output);
 uint8_t create_a_con(uint8_t input,uint8_t output);
 uint8_t delete_con(uint8_t output);
 void refresh_output(void);
+void restore_con(void);

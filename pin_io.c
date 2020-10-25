@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include "eeprom.h"
 
 //DIGITAL INPUT
 
@@ -101,6 +102,7 @@ uint16_t status[8];
 uint8_t fix_out_val(uint16_t val,uint8_t output){
 	if(status[output]>1023)return 0;
 	status[output]=val;
+	set_con(output,status[output]);
 	return 1;
 }
 
@@ -108,6 +110,7 @@ uint8_t create_d_con(uint8_t input,uint8_t output){
 	if(status[output])return 0;
 	status[output]=(1<<10);
 	status[output]|=input;
+	set_con(output,status[output]);
 	return 1;
 }
 
@@ -115,12 +118,14 @@ uint8_t create_a_con(uint8_t input,uint8_t output){
 	if(status[output])return 0;
 	status[output]=(1<<11);
 	status[output]|=input;
+	set_con(output,status[output]);
 	return 1;
 }
 
 uint8_t delete_con(uint8_t output){
 	if(output<8){
 		status[output]=0;
+		set_con(output,0);
 		return 1;
 	}else return 0;
 }
@@ -138,6 +143,13 @@ void refresh_output(void){
 			val=read_adc(status[i]&0x0f);
 		}
 		set_out_val(val,i);
+	}
+	return;
+}
+
+void restore_con(void){
+	for(uint8_t i=0;i<8;i++){
+		status[i]=get_con(i);
 	}
 	return;
 }

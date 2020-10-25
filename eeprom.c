@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "eeprom.h"
+
 //EEPROM handling
 void EEPROM_write(uint16_t address,uint8_t data){
 	while(EECR&(1<<EEPE));
@@ -74,7 +76,7 @@ uint8_t get_out(char* buf){
 		get_out_name(b,i);
 		if(!strcmp(buf,b))return i;
 	}
-	return 0xff;
+	return NO_DEV;
 }
 
 //digital input
@@ -108,7 +110,7 @@ uint8_t get_di(char* buf){
 		get_di_name(b,i);
 		if(!strcmp(buf,b))return i;
 	}
-	return 0xff;
+	return NO_DEV;
 }
 
 //analog input
@@ -142,7 +144,7 @@ uint8_t get_ai(char* buf){
 		get_ai_name(b,i);
 		if(!strcmp(buf,b))return i;
 	}
-	return 0xff;
+	return NO_DEV;
 }
 
 ////
@@ -158,4 +160,26 @@ void set_default_name(void){
 	
 	}
 	
+}
+
+////connections handling
+
+#define CON_OFFSET 384
+
+void set_con(uint8_t i,uint16_t status){
+	uint8_t a[2];
+	a[0]=(uint8_t)(status>>8);
+	a[1]=(uint8_t)(status);
+	EEPROM_seq_write(CON_OFFSET+(i*2),a,2);
+	return;
+}
+
+uint16_t get_con(uint8_t i){
+	uint8_t a[2];
+	uint16_t s;
+	a[0]=EEPROM_read(CON_OFFSET+(i*2));
+	a[1]=EEPROM_read(CON_OFFSET+(i*2)+1);
+	s=(uint16_t)a[0]<<8;
+	s+=(uint16_t)a[1];
+	return s;
 }
