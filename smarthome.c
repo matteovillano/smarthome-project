@@ -14,7 +14,7 @@
 void cmd(char* buf,char* out_buf){
 	char* tok=strtok(buf," ");
 	if(!strcmp(tok,"help")){
-		strcpy(out_buf,"all commands are described in instructions.pdf in the current folder");
+		strcpy(out_buf,"all commands are described in presentazione.pdf in the current folder");
 		return;
 	}
 	if(!strcmp(tok,"on")){
@@ -168,7 +168,7 @@ void cmd(char* buf,char* out_buf){
 	}
 	if(!strcmp(tok,"reset")){
 		tok=strtok(NULL," ");
-		if(!strcmp(tok,"names")){
+		if(!strcmp(tok,"name")){
 			set_default_name();
 			strcpy(out_buf,"done");
 			return;
@@ -301,11 +301,8 @@ int main(void){
 	di_init();
 	an_init();
 	out_init();
-	/*
-	for(uint8_t i=0;i<8;i++){
-		delete_con(i);
-	}
-	*/
+	
+	
 	restore_con();
 
 	while(1){
