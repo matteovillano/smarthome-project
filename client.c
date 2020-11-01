@@ -5,6 +5,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #define MAX_WAIT 2*CLOCKS_PER_SEC
 #define CON_REQ 1
@@ -59,20 +60,26 @@ pak new_p_pak(char header,char* payload){
 	return p;
 }
 
-//this function initialize the serial comm (i found it on web and modified it)
+
 int serialport_init(const char* serialport){
     
-    struct termios toptions;
+	struct termios toptions;
     int fd= open(serialport, O_RDWR | O_NONBLOCK );
-    
-    if (fd == -1) return -1;
-    
-    if (tcgetattr(fd, &toptions) < 0) return -1;
+    if (fd == -1){
+		printf("error from file open! errno: %d\n",errno);
+		return -1;
+	}
+	memset(&toptions,0,sizeof(struct termios));
+    if (tcgetattr(fd, &toptions) < 0){
+		printf("error from tcgetattr! errno: %d\n",errno);
+		return -1;
+	}
     
     speed_t brate=B19200;
-    cfsetispeed(&toptions, brate);
-    cfsetospeed(&toptions, brate);
-
+    cfsetispeed(&toptions, brate);	//setting input speed
+    cfsetospeed(&toptions, brate);	//setting output speed
+	
+	//setting flags
     toptions.c_cflag &= ~PARENB;
     toptions.c_cflag &= ~CSTOPB;
     toptions.c_cflag &= ~CSIZE;
@@ -85,12 +92,15 @@ int serialport_init(const char* serialport){
 
     toptions.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); 
     toptions.c_oflag &= ~OPOST; 
-
+	
     toptions.c_cc[VMIN]  = 0;
     toptions.c_cc[VTIME] = 0;
+   
     
-    tcsetattr(fd, TCSANOW, &toptions);
-    if( tcsetattr(fd, TCSAFLUSH, &toptions) < 0) return -1;
+    if(tcsetattr(fd, TCSANOW, &toptions)< 0){
+		 printf("error from tcgetattr! errno: %d\n",errno);
+		 return -1;
+	}
 	
     return fd;
 }
@@ -177,7 +187,6 @@ int comm_prot(){
 		if(p.header!=CON_ACC)
 			return -1;
 			
-			
 		while(f){
 			p=new_p_pak(PAYLOAD,tx+idx);
 			pak_tx(p);
@@ -241,7 +250,7 @@ int comm_prot(){
 		
 	p=pak_rx();
 	if(p.header==CON_REF)
-	return 1;
+	return 0;
 	else
 	return -1;
 }

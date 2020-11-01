@@ -207,27 +207,20 @@ void comm_prot(void){
 	uint8_t f;
 	uint32_t t;
 	
-	
 	if(!rx_state())return;
 	
 	p=pak_rx();
 	
-	if(p.header!=CON_REQ){
-		return;
-	}
+	if(p.header!=CON_REQ)return;
 	
 	p=new_h_pak(CON_ACC);
 	pak_tx(&p);
 	
-	
-	while(1){
-		
-		
+	while(1){	
 		t=0;
 		while(!rx_state()){
 			if(t++>1600000)return;
 		}
-		
 		
 		p=pak_rx();
 		
