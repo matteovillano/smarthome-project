@@ -37,10 +37,7 @@ all:	$(BINS)
 	avr-objcopy -O ihex -R .eeprom $< $@
 	$(AVRDUDE) $(AVRDUDE_FLAGS) -U flash:w:$@:i #$(AVRDUDE_WRITE_EEPROM) 
 	
-client:
-	gcc -o client client.c
-
 clean:	
-	rm -rf $(OBJS) $(BINS) *.hex *~ *.o client
+	rm -rf $(OBJS) $(BINS) *.hex *~ *.o
 
 .SECONDARY:	$(OBJS)
