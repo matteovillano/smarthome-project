@@ -3,6 +3,7 @@ import java.awt.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.lang.*;
 
 class ACFrame extends JFrame{
 	
@@ -30,6 +31,7 @@ class ACFrame extends JFrame{
 	
 	//center panel
 	private final JTextArea centerTA=new JTextArea(20,60);
+	private final JScrollPane centerSP=new JScrollPane(centerTA,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 	
 	//south panel
 	private final JLabel mesLab=new JLabel("Messsage:");
@@ -71,7 +73,7 @@ class ACFrame extends JFrame{
 		//center
 		centerTA.setEditable(false);
 		centerPan.setSize(600, 400);
-		centerPan.add(centerTA);
+		centerPan.add(centerSP);
 		
 		//south
 		southPan.add(mesLab);
@@ -123,7 +125,7 @@ class ACFrame extends JFrame{
 	}
 	
 	public void send() {
-		//System.out.println("premuto send");
+		if(!connected)return;
 		try{
 			String s=sTF.getText();
 			sockOut.println(s);
@@ -154,12 +156,14 @@ class ACFrame extends JFrame{
 			connectBtn.setEnabled(true);
 			disconnectBtn.setEnabled(!true);
 			sendBtn.setEnabled(!true);
+			sTF.setEditable(!true);
 			ipTA.setEditable(true);
 			portTA.setEditable(true);
 		}else {
 			connectBtn.setEnabled(!true);
 			disconnectBtn.setEnabled(true);
 			sendBtn.setEnabled(true);
+			sTF.setEditable(true);
 			ipTA.setEditable(!true);
 			portTA.setEditable(!true);
 		}
