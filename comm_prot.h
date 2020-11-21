@@ -6,7 +6,6 @@
 #include "pin_io.h"
 
 
-#define RXBUFFSIZE 64
 #define NUMRETRASMTENTS 3
 #define PAYLOAD_SIZE 4
 
@@ -31,5 +30,9 @@ paket new_p_pak(uint8_t header, uint8_t* payload);
 
 void pak_tx(paket* p);
 paket pak_rx(void);
+
+
+uint8_t get_string(char* s);
+uint8_t send_string(char* s);
 
 void comm_prot(void);

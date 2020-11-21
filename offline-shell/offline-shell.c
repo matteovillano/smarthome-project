@@ -9,6 +9,9 @@
 
 #define MAX_WAIT 2*CLOCKS_PER_SEC
 
+#define PAYLOAD_SIZE 4
+#define NUMRETRASMTENTS 3
+
 #define CON_REQ 1
 #define CON_ACC	2
 #define CON_REF 3
@@ -20,7 +23,7 @@
 
 typedef struct{
 	char header;
-	char payload[4];
+	char payload[PAYLOAD_SIZE];
 }pak;
 
 
@@ -106,10 +109,6 @@ int serialport_init(const char* serialport){
     return fd;
 }
 
-int input_clean(){
-	char a[256];
-	return read(fd,a,256);
-}
 
 int pak_tx(pak p){
 	char b[7];
@@ -119,8 +118,8 @@ int pak_tx(pak p){
 	}
 	b[5]='\r';
 	b[6]='\n';
-	printf("sending: ");
-	pak_print(p);
+	//printf("sending: ");
+	//pak_print(p);
 	return write(fd,b,7);
 	
 }
@@ -149,111 +148,130 @@ pak pak_rx(){
 			break;
 	}
 	p=new_p_pak(buf[i-7],buf+i-6);
-	printf("recived: ");
-	pak_print(p);
+	//printf("recived: ");
+	//pak_print(p);
 	return p;
 }
 
 
-int comm_prot(){
+
+
+int send_string(char* s){
+	
+	pak p;
+	int idx=0,f=1;
+	char cs[PAYLOAD_SIZE];
+	memset(cs,0,PAYLOAD_SIZE);
+	
+	p=new_h_pak(CON_REQ);
+	pak_tx(p);
+	
+	p=pak_rx();
+	if(p.header!=CON_ACC)
+		return 0;
+	
+	while(f){
+		p=new_p_pak(PAYLOAD,s+idx*PAYLOAD_SIZE);
+		idx++;
+		for(int i=0;i<PAYLOAD_SIZE;i++){
+			if(!p.payload[i])
+				f=0;
+			if(!f)
+				p.payload[i]=0;
+			cs[i]+=p.payload[i];
+		}
+		pak_tx(p);	
+	}
+	p=new_p_pak(CHECKSUM,cs);
+	pak_tx(p);
+	
+	p=pak_rx();
+	if(p.header==ACK)
+		return 1;
+	
+	return 0;
+	
+}
+
+int get_string(char* s){
+	
 	pak p;
 	int idx=0;
-	int k;
-	char cs[4]={0,0,0,0};
-	char tx[256]="";
-	char rx[256]="";
-	int f=1;
+	char cs[PAYLOAD_SIZE];
+	memset(cs,0,PAYLOAD_SIZE);
+	
+	p=pak_rx();
+	if(p.header!=CON_REQ){
+		printf("errore\n");
+		return 0;
+	}
+	
+	p=new_h_pak(CON_ACC);
+	pak_tx(p);
+	
+	while(1){
+		p=pak_rx();
+		if(p.header==PAYLOAD){
+			for(int i=0;i<PAYLOAD_SIZE;i++){
+				s[idx++]=p.payload[i];
+				cs[i]+=p.payload[i];
+			}
+		}else if(p.header==CHECKSUM){
+			for(int i=0;i<PAYLOAD_SIZE;i++){
+				if(cs[i]!=p.payload[i]){
+					p=new_h_pak(NACK);
+					pak_tx(p);
+					return 0;
+				}
+			}
+			break;
+		}else{
+			return 0;
+		}
+	}
+	
+	p=new_h_pak(ACK);
+	pak_tx(p);
+	
+	return 1;
+}
+
+int comm_prot(){
+	int tents;
+	char buf1[256],buf2[256];
+	int i=0;
+	memset(buf1,0,256);
 		
 	printf("cmd$>");
-	fgets(tx,256,stdin);
+	fgets(buf1,256,stdin);
 		
 	for(int i=0;i<256;i++){
-		if(tx[i]=='\n'){
-			tx[i]=0;
+		if(buf1[i]=='\n'){
+			buf1[i]=0;
 			break;
 		}
 	}
-
-	input_clean();
 	
-	if(!strcmp(tx,"q")||!strcmp(tx,"quit")){
-		printf("bye :)\n");
-		exit(0);
-	}
+	if(!strcmp(buf1,"q")||!strcmp(buf1,"quit"))
+	exit(0);
 	
-	for(k=0;k<3;k++){
-		p=new_h_pak(CON_REQ);
-		pak_tx(p);
-		p=pak_rx();
-		if(p.header!=CON_ACC)
-			return -1;
-			
-		while(f){
-			p=new_p_pak(PAYLOAD,tx+idx);
-			pak_tx(p);
-			for(int i=0;i<4;i++){
-				cs[i]+=p.payload[i];
-				if(!p.payload[i])
-					f=0;
-			}
-			idx+=4;
-		}
-			
-		p=new_p_pak(CHECKSUM,cs);
-		pak_tx(p);
-			
-			
-		p=pak_rx();
-		if(p.header==ACK)
+	tents=NUMRETRASMTENTS;
+	while(tents>0){
+		if(send_string(buf1))
 			break;
-		else if(p.header==NACK){
-			continue;
-		}else return -1;
+		tents--;
 	}
-	if(k>=3)return -1;
+	if(!tents)return 0;
 	
-	f=1;
-	for(k=0;k<3&&f;k++){
-		for(int i=0;i<4;i++){
-			cs[i]=0;
-		}
-			
-		idx=0;
-		while(1){
-			p=pak_rx();
-			if(p.header==CON_REF)
-				return -1;
-			if(p.header==PAYLOAD){
-				for(int j=0;j<4;j++){
-					rx[idx+j]=p.payload[j];
-					cs[j]+=p.payload[j];
-				}
-				idx+=4;
-			}else if(p.header==CHECKSUM){
-				for(int j=0;j<4;j++){
-					if(cs[j]!=p.payload[j]){
-						p=new_h_pak(NACK);
-						pak_tx(p);
-						continue;
-					}
-				}
-				p=new_h_pak(ACK);
-				pak_tx(p);
-				f=0;
-				break;
-			}else
-				return -1;
-		}
+	tents=NUMRETRASMTENTS;
+	while(tents>0){
+		if(get_string(buf2))break;
+		tents--;
 	}
-	if(k>=3)return -1;
-
-	printf("%s\n",rx);
-		
-	p=pak_rx();
-	if(p.header==CON_REF)
-	return 0;
-	else
-	return -1;
+	if(!tents)return 0;
+	
+	printf("recived:\n %s\n",buf2);
+	return 1;
 }
 
 
@@ -267,9 +285,8 @@ int main(){
 	
 	while(1){
 		int a=comm_prot();
-		if(a<0)printf("comunication error\n");
+		if(!a)printf("comunication error\n");
 	}
 	
 	return 0;
 }
-/////////////////////////////////////////////////

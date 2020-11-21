@@ -41,92 +41,110 @@ void pak_tx(paket* p){
 	return;
 }
 
+//////////////////////////
 
-/////////////comm_protocol//////////////
-
-void comm_prot(void){
-	paket p;
-	uint8_t tx_b[256];
-	uint8_t* rx_b;
-	uint8_t i=0;
-	uint8_t cs[4]={0,0,0,0};
-	uint8_t f;
-	uint32_t t;
+uint8_t get_string(char* s){
 	
-	if(!rx_state())return;
+	paket p;
+	uint8_t idx=0;
+	uint8_t cs[PAYLOAD_SIZE];
+	for(uint8_t i=0;i<PAYLOAD_SIZE;i++){
+		cs[i]=0;
+	}
 	
 	p=pak_rx();
-	
-	if(p.header!=CON_REQ)return;
+	if(p.header!=CON_REQ)
+		return 0;
 	
 	p=new_h_pak(CON_ACC);
 	pak_tx(&p);
 	
-	while(1){	
-		t=0;
-		while(!rx_state()){
-			if(t++>1600000)return;
-		}
-		
+	while(1){
 		p=pak_rx();
-		
 		if(p.header==PAYLOAD){
-			for(uint8_t j=0;j<4;j++){
-				tx_b[i+j]=p.payload[j];
-				cs[j]+=p.payload[j];
+			for(uint8_t i=0;i<PAYLOAD_SIZE;i++){
+				s[idx++]=p.payload[i];
+				cs[i]+=p.payload[i];
 			}
-			i+=4;
 		}else if(p.header==CHECKSUM){
-			for(uint8_t j=0;j<4;j++){
-				if(cs[j]!=p.payload[j]){
+			for(uint8_t i=0;i<PAYLOAD_SIZE;i++){
+				if(cs[i]!=p.payload[i]){
 					p=new_h_pak(NACK);
-					pak_tx(&p);
-					return;
+					return 0;
 				}
 			}
-			p=new_h_pak(ACK);
-			pak_tx(&p);
 			break;
 		}else{
-			p=new_h_pak(CON_REF);
-			pak_tx(&p);
-			return;
+			return 0;
 		}
 	}
-	
-	rx_b=(uint8_t*)cmd((char*)tx_b);
-	
-	for(uint8_t k=0;k<3;k++){
-		i=0;
-		f=1;
-		for(uint8_t j=0;j<4;j++){
-			cs[j]=0;
-		}
-		while(f){
-			p=new_p_pak(PAYLOAD,rx_b+i);
-			pak_tx(&p);
-			for(uint8_t j=0;j<4;j++){
-				cs[j]+=p.payload[j];
-				if(!p.payload[j])f=0;
-			}
-			i+=4;
-		}
-		p=new_p_pak(CHECKSUM,cs);
-		pak_tx(&p);
-		
-		t=0;
-		while(!rx_state()){
-			if(t++>1600000)return;
-		}
-		
-		p=pak_rx();
-		if(p.header!=NACK)
-		k=4;
-	}
-	
-	p=new_h_pak(CON_REF);
+	p=new_h_pak(ACK);
 	pak_tx(&p);
 	
-	return;
-	return;
+	return 1;
+}
+
+uint8_t send_string(char* s){
+	
+	paket p;
+	uint8_t f=1;
+	uint8_t idx=0;
+	uint8_t cs[PAYLOAD_SIZE];
+	for(uint8_t i=0;i<PAYLOAD_SIZE;i++){
+		cs[i]=0;
+	}
+	
+	p=new_h_pak(CON_REQ);
+	pak_tx(&p);
+	
+	p=pak_rx();
+	if(p.header!=CON_ACC)
+		return 0;
+	
+	while(f){
+		p=new_p_pak(PAYLOAD,(uint8_t*)s+idx*PAYLOAD_SIZE);
+		idx++;
+		for(uint8_t i=0;i<PAYLOAD_SIZE;i++){
+			if(!p.payload[i])
+				f=0;
+			if(!f)
+				p.payload[i]=0;
+			cs[i]+=p.payload[i];
+		}
+		pak_tx(&p);
+	}
+	p=new_p_pak(CHECKSUM,cs);
+	pak_tx(&p);
+	
+	p=pak_rx();
+	if(p.header==ACK)
+	return 1;
+	
+	return 0;
+}
+
+/////////////comm_protocol//////////////
+
+void comm_prot(void){
+	uint8_t tents;
+	char* r;
+	char buff[256];
+	for(uint16_t i=0;i<256;i++)
+		buff[i]=0;
+	tents=NUMRETRASMTENTS;
+	while(tents>0){
+		if(get_string(buff))
+			break;
+		tents--;
+	}
+	if(!tents)return;
+	r=cmd(buff);
+	tents=NUMRETRASMTENTS;
+	while(tents>0){
+		if(send_string(r))
+			break;
+		tents--;
+	}
+	if(!tents)return;
+			
 }
