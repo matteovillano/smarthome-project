@@ -1,6 +1,16 @@
 #pragma once
 
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <stdio.h>
+#include <string.h>
+
 #define NO_DEV 0xff
+
+#define NAMES_OFFSET 0
+#define NAMELEN 16
+
+#define CON_OFFSET (NAMES_OFFSET+(NAMELEN*8*3))
 
 void EEPROM_write(uint16_t address,uint8_t data);
 uint8_t EEPROM_read(uint16_t address);

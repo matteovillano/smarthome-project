@@ -1,8 +1,3 @@
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <stdio.h>
-#include <string.h>
-
 #include "eeprom.h"
 
 //EEPROM handling
@@ -42,8 +37,7 @@ void EEPROM_seq_read(uint16_t address, uint8_t* buf, uint16_t len){
 	return;
 }
 
-#define NAMES_OFFSET 0
-#define NAMELEN 16
+
 
 //ouput
 void get_out_name(char* buf,uint8_t output){
@@ -163,14 +157,11 @@ void set_default_name(void){
 }
 
 ////connections handling
-
-#define CON_OFFSET 384
-
-void set_con(uint8_t i,uint16_t status){
+void set_con(uint8_t output,uint16_t status){
 	uint8_t a[2];
 	a[0]=(uint8_t)(status>>8);
 	a[1]=(uint8_t)(status);
-	EEPROM_seq_write(CON_OFFSET+(i*2),a,2);
+	EEPROM_seq_write(CON_OFFSET+(output*2),a,2);
 	return;
 }
 

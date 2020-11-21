@@ -1,27 +1,24 @@
 #pragma once
 
-#define CON_REQ 1
-#define CON_ACC	2
-#define CON_REF 3
-#define PAYLOAD 4
-#define CHECKSUM 5
-#define ACK 6
-#define NACK 7
+#include <stdint.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <string.h>
 
-typedef struct{
-	uint8_t header;
-	uint8_t payload[4];
-}paket;
+#define UARTBAUD 19200
+#define UARTUBRR (F_CPU/16/UARTBAUD-1)
+#define BUFFSIZE 256
+
 
 void UART_init(void);		//uart init
 
+//tx
 void tx(uint8_t* buf, uint8_t len);
-void rx(uint8_t* buf);
+
+//rx
 uint8_t rx_state(void);
+void rx(uint8_t* buf);
 
 
-void pak_tx(paket* p);
-paket pak_rx(void);
 
-paket new_h_pak(uint8_t header);
-paket new_p_pak(uint8_t header, uint8_t* payload);
+

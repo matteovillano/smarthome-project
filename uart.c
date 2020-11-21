@@ -1,24 +1,13 @@
-#include <stdint.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-
 #include "uart.h"
-#define UARTBAUD 19200
-#define UARTUBRR (F_CPU/16/UARTBAUD-1)
-
-
-
 
 ///////////////VARS///////////////
-volatile uint8_t tx_buf[256];
+volatile uint8_t tx_buf[BUFFSIZE];
 volatile uint8_t tx_idx=0; 
 volatile uint8_t tx_complete=0;
 
-volatile uint8_t rx_buf[256];
+volatile uint8_t rx_buf[BUFFSIZE];
 volatile uint8_t rx_idx;
 volatile uint8_t rx_complete;
-///////////////////////////////
-
 
 
 ////////INTERRUPT HANDLER////////////////
@@ -64,12 +53,6 @@ void tx(uint8_t* buf, uint8_t len){
 	return;
 }
 
-
-void pak_tx(paket* p){
-	tx((uint8_t*)p,5);
-	
-	return;
-}
 ///////////////////////////////////////
 
 
@@ -80,11 +63,12 @@ uint8_t rx_state(void){
 }
 
 void rx(uint8_t* buf){
+	if(!rx_complete)return;
 	uint8_t i=0;
 	while(1){
 		buf[i]=rx_buf[i];
 		i++;
-		if(rx_buf[i+1]=='\n'&&rx_buf[i]=='\r')
+		if(rx_buf[i]=='\r'&&rx_buf[i+1]=='\n')
 		break;
 	}
 	
@@ -94,18 +78,6 @@ void rx(uint8_t* buf){
 	return;
 }
 
-paket pak_rx(void){
-	paket p;
-	if(!rx_state())
-	return p;
-	uint8_t *pa=(uint8_t*)&p;
-	uint8_t buf[256];
-	rx(buf);
-	for(uint8_t i=0;i<5;i++)
-	pa[i]=buf[i];
-	
-	return p;
-}
 ///////////////////////////////
 
 
@@ -113,36 +85,22 @@ paket pak_rx(void){
 ////////uart inizialization//////////////
 void UART_init(void){
 	cli();
-	UBRR0H = (uint8_t)(UARTUBRR>>8);
+	UBRR0H = (uint8_t)(UARTUBRR>>8); /*UBRR*/
 	UBRR0L = (uint8_t)UARTUBRR;
 
 	UCSR0C = (1<<UCSZ01) | (1<<UCSZ00); /* 8-bit data */ 
 	UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);   /* Enable RX and TX */  
 	
 	sei();
+	
+	rx_idx=0;
+	rx_complete=0;
+	tx_idx=0; 
+	tx_complete=0;
 	return;
 }
 ////////////////////////////////
 
-///////////paket creation///////////////
-paket new_h_pak(uint8_t header){
-	paket p;
-	p.header=header;
-	for(uint8_t i=0;i<4;i++){
-		p.payload[i]=0;
-	}
-	return p;
-}
 
-paket new_p_pak(uint8_t header, uint8_t* payload){
-	paket p;
-	p.header=header;
-	for(uint8_t i=0;i<4;i++){
-		p.payload[i]=payload[i];
-	}
-	return p;
-}
-
-///////////////////////////////////
 
 

@@ -1,6 +1,4 @@
-#include <stdint.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
+#include "pin_io.h"
 #include "eeprom.h"
 
 //DIGITAL INPUT
@@ -87,7 +85,7 @@ void set_out_val(uint16_t val,uint8_t pin){
 //output on/off setting
 void set_out(uint8_t on_off,uint8_t pin){
 	uint16_t v=0;
-	if(on_off)v=1023;
+	if(on_off)v=MAXVAL;
 	set_out_val(v,pin);
 	return;
 }
@@ -100,7 +98,7 @@ void set_out(uint8_t on_off,uint8_t pin){
 uint16_t status[8];
 
 uint8_t fix_out_val(uint16_t val,uint8_t output){
-	if(status[output]>1023)return 0;
+	if(status[output]>MAXVAL)return 0;
 	status[output]=val;
 	set_con(output,status[output]);
 	return 1;
@@ -108,7 +106,7 @@ uint8_t fix_out_val(uint16_t val,uint8_t output){
 
 uint8_t create_d_con(uint8_t input,uint8_t output){
 	if(status[output])return 0;
-	status[output]=(1<<10);
+	status[output]=DIG_CON_FLAG;
 	status[output]|=input;
 	set_con(output,status[output]);
 	return 1;
@@ -116,7 +114,7 @@ uint8_t create_d_con(uint8_t input,uint8_t output){
 
 uint8_t create_a_con(uint8_t input,uint8_t output){
 	if(status[output])return 0;
-	status[output]=(1<<11);
+	status[output]=AN_CON_FLAG;
 	status[output]|=input;
 	set_con(output,status[output]);
 	return 1;
@@ -131,17 +129,18 @@ uint8_t delete_con(uint8_t output){
 }
 
 void refresh_output(void){
+	uint16_t val;
 	for(uint8_t i=0;i<8;i++){
-		uint16_t val=0;
-		if(status[i]<1024)
-		val=status[i];
-		if(status[i]&(1<<10)){
-			if(di_status&(1<<(status[i]&0x0f)))val=1023;
+		val=0;
+		if(status[i]<=MAXVAL)
+			val=status[i];
+		else if(status[i]&DIG_CON_FLAG){
+			if(di_status&(1<<(status[i]&0x0f)))
+				val=MAXVAL;
 			else val=0;
 		}
-		if(status[i]&(1<<11)){
+		else if(status[i]&AN_CON_FLAG)
 			val=read_adc(status[i]&0x0f);
-		}
 		set_out_val(val,i);
 	}
 	return;

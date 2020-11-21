@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #define MAX_WAIT 2*CLOCKS_PER_SEC
+
 #define CON_REQ 1
 #define CON_ACC	2
 #define CON_REF 3
@@ -118,8 +119,8 @@ int pak_tx(pak p){
 	}
 	b[5]='\r';
 	b[6]='\n';
-	//printf("sending: ");
-	//pak_print(p);
+	printf("sending: ");
+	pak_print(p);
 	return write(fd,b,7);
 	
 }
@@ -148,8 +149,8 @@ pak pak_rx(){
 			break;
 	}
 	p=new_p_pak(buf[i-7],buf+i-6);
-	//printf("recived: ");
-	//pak_print(p);
+	printf("recived: ");
+	pak_print(p);
 	return p;
 }
 

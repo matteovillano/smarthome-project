@@ -1,5 +1,14 @@
 #pragma once
 
+#include <stdint.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include "eeprom.h"
+
+#define MAXVAL 1023
+#define DIG_CON_FLAG (1<<10)
+#define AN_CON_FLAG (1<<11)
+
 //DIGITAL INPUT
 void di_init(void);
 uint8_t get_di_status(void);
