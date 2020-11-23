@@ -225,7 +225,7 @@ char* cmd(char* buf){
 			break;
 	}
 	
-	if(!select_cmd())
+	if(select_cmd()==CMDFAIL)
 		strcpy(out_buf,"no cmd found, type help");
 	
 	return out_buf;

@@ -5,7 +5,7 @@
 ////////////
 #include "pin_io.h"
 
-
+#define TIMEOUT 10000000
 #define NUMRETRASMTENTS 3
 #define PAYLOAD_SIZE 4
 

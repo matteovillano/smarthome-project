@@ -19,7 +19,7 @@ int comm_prot(){
 	}
 	
 	if(!strcmp(buf1,"q")||!strcmp(buf1,"quit")){
-		printf("exiting...");
+		printf("exiting...\n");
 		exit(0);
 	}
 	

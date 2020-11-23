@@ -13,14 +13,18 @@ void delay(int ms){
 }
 
 void pak_print(pak p){
-	printf("<h:%d p:%d %d %d %d>\n",p.header,p.payload[0],p.payload[1],p.payload[2],p.payload[3]);
+	printf("<h:%d ",p.header);
+	for(int i=0;i<PAYLOAD_SIZE;i++){
+		printf("%d ",p.payload[i]);
+	}
+	printf(">\n");
 	return;
 }
 
 pak new_h_pak(char header){
 	pak p;
 	p.header=header;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<PAYLOAD_SIZE;i++){
 		p.payload[i]=0;
 	}
 	return p;
@@ -29,7 +33,7 @@ pak new_h_pak(char header){
 pak new_p_pak(char header,char* payload){
 	pak p;
 	p.header=header;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<PAYLOAD_SIZE;i++){
 		p.payload[i]=payload[i];
 	}
 	return p;
@@ -82,13 +86,13 @@ int serialport_init(const char* serialport){
 
 
 int pak_tx(pak p){
-	char b[7];
+	char b[sizeof(pak)+2];
 	char* pa=(char*)&p;
-	for(int i=0;i<5;i++){
+	for(int i=0;i<sizeof(pak);i++){
 		b[i]=pa[i];
 	}
-	b[5]='\r';
-	b[6]='\n';
+	b[sizeof(pak)]='\r';
+	b[sizeof(pak)+1]='\n';
 	//printf("sending: ");
 	//pak_print(p);
 	return write(fd,b,7);
@@ -97,7 +101,7 @@ int pak_tx(pak p){
 
 pak pak_rx(){
 	pak p;
-	char buf[16];
+	char buf[3*sizeof(pak)];
 	char read_buf;
 	int i=0;
 	int read_res=0;
@@ -118,7 +122,7 @@ pak pak_rx(){
 		if(i>=7&&(buf[i-1]==10||buf[i-1]==13)&&(buf[i-2]==10||buf[i-2]==13))
 			break;
 	}
-	p=new_p_pak(buf[i-7],buf+i-6);
+	p=new_p_pak(buf[i-sizeof(pak)-2],buf+i-PAYLOAD_SIZE-2);
 	//printf("recived: ");
 	//pak_print(p);
 	return p;
@@ -173,7 +177,6 @@ int get_string(char* s){
 	
 	p=pak_rx();
 	if(p.header!=CON_REQ){
-		printf("errore\n");
 		return 0;
 	}
 	

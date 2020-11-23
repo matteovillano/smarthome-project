@@ -158,6 +158,8 @@ void set_default_name(void){
 
 ////connections handling
 void set_con(uint8_t output,uint16_t status){
+	if(output>=8)
+		return;
 	uint8_t a[2];
 	a[0]=(uint8_t)(status>>8);
 	a[1]=(uint8_t)(status);
@@ -166,6 +168,8 @@ void set_con(uint8_t output,uint16_t status){
 }
 
 uint16_t get_con(uint8_t i){
+	if(i>=8)
+		return 0;
 	uint8_t a[2];
 	uint16_t s;
 	a[0]=EEPROM_read(CON_OFFSET+(i*2));

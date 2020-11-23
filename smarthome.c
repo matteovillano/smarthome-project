@@ -32,7 +32,7 @@ int main(void){
 		}
 		
 		refresh_output();
-		_delay_ms(10);
+		//_delay_ms(10);
 		
 	}
 }

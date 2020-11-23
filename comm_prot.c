@@ -23,7 +23,7 @@ paket pak_rx(void){
 	uint8_t buf[BUFFSIZE];
 	
 	memset(pa,0,sizeof(paket));
-	uint32_t timeout=10000000;
+	uint32_t timeout=TIMEOUT;
 	while(!rx_state()){
 		timeout--;
 		if(!timeout)return p;
