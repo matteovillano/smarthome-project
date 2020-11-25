@@ -21,6 +21,7 @@ int comm_prot(int sock){
 			break;
 		}
 	}
+	printf("recived from server:\n%s\n",buf1);
 	
 	tents=NUMRETRASMTENTS;
 	while(tents>0){
@@ -32,9 +33,10 @@ int comm_prot(int sock){
 		sprintf(buf2,"comunication error");
 		write(sock,buf2,strlen(buf2));
 		write(sock,"\r\n",2);
-		printf("sended to client: %s\n",buf2);
+		printf("sent to client:\n%s\n",buf2);
 		return 1;
 	}
+	
 	
 	tents=NUMRETRASMTENTS;
 	while(tents>0){
@@ -46,13 +48,13 @@ int comm_prot(int sock){
 		sprintf(buf2,"comunication error");
 		write(sock,buf2,strlen(buf2));
 		write(sock,"\r\n",2);
-		printf("sended to client: %s\n",buf2);
+		printf("sent to client:\n%s\n",buf2);
 		return 1;
 	}
 	
 	write(sock,buf2,strlen(buf2));
 	write(sock,"\r\n",2);
-	printf("sended to client: %s\n",buf2);
+	printf("sent to client:\n%s\n",buf2);
 		
 	return 1;
 }
@@ -64,7 +66,7 @@ int main(){
 	printf("Starting client\n");
 	fd=serialport_init("/dev/ttyACM0");
 	if(fd==-1){printf("can not create a connection\n");return -1;}
-	printf("connection established\n");
+	printf("serial connection established\n");
 	
 	int s1=websockinit();
 	if(s1<0){

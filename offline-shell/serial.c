@@ -1,4 +1,5 @@
 #include "serial.h"
+#define DEBUGPRINT 0
 
 void delay(int ms){
 	long pause;
@@ -88,15 +89,22 @@ int serialport_init(const char* serialport){
 int pak_tx(pak p){
 	char b[sizeof(pak)+2];
 	char* pa=(char*)&p;
+	int write_res;
 	for(int i=0;i<sizeof(pak);i++){
 		b[i]=pa[i];
 	}
 	b[sizeof(pak)]='\r';
 	b[sizeof(pak)+1]='\n';
-	//printf("sending: ");
-	//pak_print(p);
-	return write(fd,b,7);
-	
+	if(DEBUGPRINT){
+		printf("sending: ");
+		pak_print(p);
+	}
+	write_res=write(fd,b,7);
+	if(write_res<0){
+			printf("serial communication error...\n");
+			exit(0);
+		}
+	return 1;
 }
 
 pak pak_rx(){
@@ -110,6 +118,10 @@ pak pak_rx(){
 	now=then;
 	while(1){
 		read_res=read(fd,&read_buf,1);
+		if(read_res<0){
+			printf("serial communication error...\n");
+			exit(0);
+		}
 		if(read_res){
 			buf[i]=read_buf;
 			i++;
@@ -123,8 +135,10 @@ pak pak_rx(){
 			break;
 	}
 	p=new_p_pak(buf[i-sizeof(pak)-2],buf+i-PAYLOAD_SIZE-2);
-	//printf("recived: ");
-	//pak_print(p);
+	if(DEBUGPRINT){
+		printf("recived: ");
+		pak_print(p);
+	}
 	return p;
 }
 

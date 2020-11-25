@@ -37,6 +37,7 @@ class ACFrame extends JFrame{
 	private final JLabel mesLab=new JLabel("Messsage:");
 	private final JTextField sTF=new JTextField(30);
 	private final JButton sendBtn=new JButton("Send");
+	private final JButton cleanBtn=new JButton("Clean");
 	
 	//
 	private boolean connected=false;
@@ -50,11 +51,13 @@ class ACFrame extends JFrame{
 		disconnectBtn.addActionListener(list);
 		sendBtn.addActionListener(list);
 		sTF.addActionListener(list);
+		cleanBtn.addActionListener(list);
 		
 		connectBtn.setActionCommand("1");
 		disconnectBtn.setActionCommand("2");
 		sendBtn.setActionCommand("3");
 		sTF.setActionCommand("3");
+		cleanBtn.setActionCommand("4");
 		
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		//this.setSize(800,600);
@@ -79,6 +82,7 @@ class ACFrame extends JFrame{
 		southPan.add(mesLab);
 		southPan.add(sTF,BorderLayout.CENTER);
 		southPan.add(sendBtn,BorderLayout.WEST);
+		southPan.add(cleanBtn,BorderLayout.WEST);
 		
 		cont.add(northPan,BorderLayout.NORTH);
 		cont.add(centerPan,BorderLayout.CENTER);
@@ -150,6 +154,10 @@ class ACFrame extends JFrame{
 		}	
 	}
 	
+	public void cleanTA(){
+		centerTA.setText("");
+	}
+	
 	//aux methods
 	private void setBtns(){
 		if(!connected) {
@@ -174,4 +182,5 @@ class ACFrame extends JFrame{
 	private void appendText(String s){
 		centerTA.setText(centerTA.getText()+"\n"+s);
 	}
+	
 }

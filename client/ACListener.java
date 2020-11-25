@@ -26,6 +26,9 @@ public class ACListener implements ActionListener{
 			case "3":
 				frame.send();
 				break;
+			case "4":
+				frame.cleanTA();
+				break;
 		}
 		
 	}
